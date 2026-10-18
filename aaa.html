@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hay Soluciones — Marketing, Desarrollo & IA</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js for interactive 3D core -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Tone.js for spatial sci-fi audio feedback -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --scroll: 0;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #000000;
+            color: #f5f5f7;
+            overflow-x: hidden;
+            selection-background-color: #38bdf8;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #000;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #22d3ee;
+            border-radius: 4px;
+        }
+
+        /* Cinematic Film Noise Overlay */
+        .bg-noise {
+            background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+
+        /* Custom Magnetic Reticle Cursor */
+        #custom-cursor-dot, #custom-cursor-ring {
+            pointer-events: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s ease;
+        }
+        #custom-cursor-dot {
+            width: 6px;
+            height: 6px;
+            background: #22d3ee;
+            border-radius: 50%;
+            box-shadow: 0 0 12px #22d3ee;
+        }
+        #custom-cursor-ring {
+            width: 36px;
+            height: 36px;
+            border: 1px solid rgba(34, 211, 238, 0.45);
+            border-radius: 50%;
+            transition: width 0.2s ease, height 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+        }
+        body.cursor-hover #custom-cursor-ring {
+            width: 58px;
+            height: 58px;
+            border-color: rgba(168, 85, 247, 0.9);
+            background-color: rgba(34, 211, 238, 0.08);
+        }
+
+        /* Apple-style Gradient Text */
+        .text-gradient-titanium {
+            background: linear-gradient(180deg, #FFFFFF 0%, #71717A 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .text-gradient-cyan {
+            background: linear-gradient(135deg, #67e8f9 0%, #3b82f6 50%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Bento Spotlight + 3D Tilt Card Effect */
+        .bento-card {
+            position: relative;
+            background: rgba(18, 18, 22, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            overflow: hidden;
+            transition: border-color 0.3s ease, box-shadow 0.4s ease;
+            backdrop-filter: blur(24px);
+            transform-style: preserve-3d;
+            will-change: transform;
+        }
+        .bento-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(650px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(34, 211, 238, 0.18), transparent 40%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .bento-card:hover::before {
+            opacity: 1;
+        }
+        .bento-card:hover {
+            border-color: rgba(34, 211, 238, 0.45);
+            box-shadow: 0 25px 60px -15px rgba(6, 182, 212, 0.2);
+        }
+
+        /* 3D Hardware Exploded View Perspective */
+        .scene-3d {
+            perspective: 1600px;
+        }
+        .hardware-stack {
+            transform-style: preserve-3d;
+            transition: transform 0.08s linear;
+        }
+        .hw-layer {
+            transform-style: preserve-3d;
+            transition: transform 0.08s linear, opacity 0.2s ease, box-shadow 0.2s ease;
+            will-change: transform, opacity;
+        }
+
+        /* Laser Scanner Line inside 3D stack */
+        @keyframes scanLaser {
+            0%, 100% { top: 0%; opacity: 0.2; }
+            50% { top: 96%; opacity: 1; }
+        }
+        .laser-line {
+            animation: scanLaser 3.2s ease-in-out infinite;
+        }
+
+        /* Reveal on scroll utility */
+        .reveal-up {
+            opacity: 0;
+            transform: translateY(40px) scale(0.96);
+            transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal-up.active {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* Subtle grid pattern overlay */
+        .bg-grid-pattern {
+            background-size: 55px 55px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+        }
+
+        /* Pulse Glow */
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.35; transform: scale(1); }
+            50% { opacity: 0.75; transform: scale(1.08); }
+        }
+        .glow-orb {
+            animation: pulseGlow 6s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-cyan-500 selection:text-black">
+
+    <!-- Custom Magnetic Cursor (Desktop) -->
+    <div id="custom-cursor-dot" class="hidden md:block"></div>
+    <div id="custom-cursor-ring" class="hidden md:block"></div>
+
+    <!-- Top Scroll Progress Indicator -->
+    <div class="fixed top-0 left-0 right-0 h-[3px] bg-zinc-900/80 z-50">
+        <div id="scroll-progress" class="h-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 w-0 shadow-[0_0_15px_#22d3ee]"></div>
+    </div>
+
+    <!-- Fixed Sci-Fi Telemetry HUD Corners -->
+    <div class="fixed inset-0 pointer-events-none z-30 hidden lg:block p-6">
+        <!-- Left HUD Bar -->
+        <div class="fixed left-6 top-1/2 -translate-y-1/2 flex flex-col items-center gap-3 text-[10px] font-mono text-zinc-500">
+            <span id="hud-depth" class="text-cyan-400 font-bold">0000m</span>
+            <div class="w-[1px] h-32 bg-gradient-to-b from-transparent via-cyan-500/40 to-transparent relative">
+                <div id="hud-depth-marker" class="w-2 h-2 -left-[3.5px] rounded-full bg-cyan-400 absolute top-0 shadow-[0_0_8px_#22d3ee]"></div>
+            </div>
+            <span>WARP</span>
+        </div>
+
+        <!-- Right HUD Telemetry -->
+        <div class="fixed right-6 bottom-6 text-right font-mono text-[10px] text-zinc-500 space-y-0.5 bg-black/50 backdrop-blur-md px-3 py-2 rounded-xl border border-white/5">
+            <div class="text-cyan-400 flex items-center justify-end gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
+                <span>CORE: QUANTUM-ACTIVE</span>
+            </div>
+            <div id="hud-coords">CAM.Z: 28.00 | VEL: 0.00</div>
+        </div>
+    </div>
+
+    <!-- Fixed 3D Three.js Background Canvas -->
+    <canvas id="three-canvas" class="fixed inset-0 w-full h-full pointer-events-none z-0"></canvas>
+
+    <!-- Apple Dynamic Island Floating Bottom Bar -->
+    <div class="fixed bottom-5 left-1/2 -translate-x-1/2 z-40">
+        <div id="dynamic-island" class="flex items-center gap-3 px-4 py-2 rounded-full bg-zinc-950/90 border border-white/15 backdrop-blur-2xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] transition-all duration-500 hover:border-cyan-400/50">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+            <span id="island-status" class="text-xs font-medium text-zinc-200 tracking-tight whitespace-nowrap">01 // Inmersión Cuántica</span>
+            <div class="h-3 w-[1px] bg-white/15 mx-1"></div>
+            <button id="audio-toggle-btn" onclick="toggleSpatialAudio()" class="flex items-center gap-1.5 text-[11px] font-mono text-zinc-400 hover:text-cyan-300 transition-colors px-2 py-0.5 rounded-full bg-white/5">
+                <i id="audio-icon" data-lucide="volume-x" class="w-3.5 h-3.5"></i>
+                <span id="audio-label">SFX OFF</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Apple-style Glassmorphism Navbar -->
+    <header class="fixed top-0 inset-x-0 z-40 backdrop-blur-xl bg-black/50 border-b border-white/10 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+            <a href="#" class="flex items-center gap-2.5 group">
+                <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
+                    <i data-lucide="cpu" class="w-4 h-4 text-white"></i>
+                </div>
+                <span class="font-bold tracking-tight text-sm sm:text-base text-white">Hay Soluciones</span>
+                <span class="text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 font-semibold hidden sm:inline-block">HYPER-OS 5.0</span>
+            </a>
+
+            <nav class="hidden md:flex items-center gap-7 text-xs font-medium text-zinc-400">
+                <a href="#portal-runway" class="hover:text-white transition-colors">Portal M-Core</a>
+                <a href="#arquitectura" class="hover:text-white transition-colors">Despiece 3D</a>
+                <a href="#horizontal-runway" class="hover:text-white transition-colors">Casos En Vivo</a>
+                <a href="#ecosistema" class="hover:text-white transition-colors">Bento 3D</a>
+                <a href="#simulador" class="hover:text-white transition-colors">Simulador ROI</a>
+            </nav>
+
+            <div class="flex items-center gap-3">
+                <button onclick="openContactModal()" class="text-xs font-semibold bg-white text-black hover:bg-cyan-300 px-4 py-1.5 rounded-full transition-all transform active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.25)]">
+                    Iniciar Proyecto
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- SECTION 1: STICKY HERO PARALLAX + HYPERSPACE FLY-THROUGH (280vh scroll runway) -->
+    <section id="hero-runway" class="relative h-[280vh] z-10">
+        <div class="sticky top-0 h-screen w-full flex flex-col items-center justify-center overflow-hidden px-4">
+            
+            <!-- Ambient Radial Spotlight -->
+            <div id="hero-glow" class="absolute w-[42rem] h-[42rem] rounded-full bg-cyan-500/15 blur-[140px] pointer-events-none glow-orb"></div>
+
+            <!--Stage 1 Content: Initial Reveal-->
+            <div id="hero-stage-1" class="relative z-10 text-center max-w-5xl mx-auto will-change-transform">
+                <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-cyan-400/30 bg-cyan-950/30 backdrop-blur-md mb-6 shadow-[0_0_25px_rgba(34,211,238,0.15)]">
+                    <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                    <span class="text-xs font-mono uppercase tracking-widest text-cyan-200">Marketing • Programación • Desarrollo • IA</span>
+                </div>
+                
+                <h1 class="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-tighter leading-[0.92] text-gradient-titanium mb-6">
+                    Hay Soluciones.
+                </h1>
+                
+                <p class="text-lg sm:text-2xl md:text-3xl text-zinc-400 font-normal max-w-3xl mx-auto tracking-tight leading-relaxed">
+                    Fusionamos <span class="text-white font-semibold">Marketing de Alto Impacto, Desarrollo de Software e Inteligencia Artificial</span> para escalar tu marca y multiplicar tus ventas.
+                </p>
+            </div>
+
+            <!-- Stage 2 Content: Emerges mid-scroll during Hero zoom -->
+            <div id="hero-stage-2" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none opacity-0 px-4 text-center z-20 will-change-transform">
+                <div class="px-3 py-1 rounded-full bg-purple-500/15 border border-purple-400/30 text-purple-300 text-xs font-mono uppercase tracking-widest mb-4">
+                    Agencia & Software House Todo-en-Uno
+                </div>
+                <h2 class="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-white max-w-4xl leading-[1.05]">
+                    No solo atraemos tráfico.<br>
+                    <span class="text-gradient-cyan">Programamos tu Crecimiento.</span>
+                </h2>
+                <p class="mt-6 text-zinc-300 max-w-xl text-base sm:text-lg">
+                    Atraviesa el núcleo para ver cómo unimos campañas virales, código a medida y agentes de IA en una sola máquina de ventas.
+                </p>
+            </div>
+
+            <!-- Scroll Prompt Indicator -->
+            <div id="scroll-prompt" class="absolute bottom-20 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-zinc-400 text-xs transition-opacity duration-300">
+                <span class="tracking-widest uppercase text-[10px] font-mono text-cyan-300">Haz scroll para atravesar el núcleo</span>
+                <div class="w-5 h-8 rounded-full border border-cyan-500/40 flex items-start justify-center p-1">
+                    <div class="w-1 h-2 bg-cyan-400 rounded-full animate-bounce"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 2: GIANT CHIP PORTAL ZOOM THROUGH (Apple M4 Launch Style - 240vh) -->
+    <section id="portal-runway" class="relative h-[240vh] z-10">
+        <div class="sticky top-0 h-screen w-full overflow-hidden flex items-center justify-center">
+            <!-- Backdrop dark vignette that parts as the giant text zooms -->
+            <div id="portal-backdrop" class="absolute inset-0 bg-black/85 flex flex-col items-center justify-center px-4 will-change-transform">
+                <p id="portal-sub" class="text-xs font-mono uppercase tracking-[0.3em] text-cyan-400 mb-4">MOTOR DE MARKETING, CÓDIGO & IA</p>
+                <h2 id="portal-giant-text" class="text-6xl sm:text-8xl md:text-9xl font-black tracking-tighter text-white text-center select-none will-change-transform">
+                    GROWTH<span class="text-cyan-400">CORE</span>
+                </h2>
+                <p id="portal-desc" class="mt-4 text-zinc-400 text-sm sm:text-base max-w-md text-center">
+                    Entrando al ecosistema donde el marketing estratégico se une con la programación avanzada y la inteligencia artificial.
+                </p>
+            </div>
+
+            <!-- Revealed Inner Core HUD when zoomed inside the letters -->
+            <div id="portal-inner-reveal" class="relative z-20 opacity-0 scale-90 pointer-events-none text-center max-w-3xl px-6 transition-none">
+                <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 text-xs font-mono mb-4">
+                    <i data-lucide="activity" class="w-3.5 h-3.5"></i> ECOSISTEMA 360°: MARKETING + DEV + IA
+                </div>
+                <h3 class="text-3xl sm:text-5xl md:text-6xl font-black text-white tracking-tight mb-4">
+                    Bienvenido al cerebro de <span class="text-gradient-cyan">Hay Soluciones</span>.
+                </h3>
+                <p class="text-zinc-300 text-base sm:text-xl leading-relaxed">
+                    Donde campañas publicitarias hiper-segmentadas, plataformas web/móviles ultrarrápidas y bots con IA trabajan sincronizados para convertir desconocidos en clientes fieles.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 3: WORD-BY-WORD APPLE ILLUMINATION MANIFESTO -->
+    <section id="manifesto-runway" class="relative h-[200vh] z-10 bg-black/80 backdrop-blur-md border-t border-white/5">
+        <div class="sticky top-0 h-screen flex items-center justify-center px-6">
+            <div class="max-w-4xl mx-auto">
+                <p class="text-xs font-semibold uppercase tracking-widest text-cyan-400 mb-6 flex items-center gap-2">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i> Nuestro Manifiesto de Ingeniería
+                </p>
+                <div id="manifesto-text" class="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.18] flex flex-wrap gap-x-3 gap-y-2">
+                    <!-- Words populated and illuminated dynamically via JS -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 4: EXPLODED 3D ARCHITECTURE WITH LASER SCANNER (360vh scroll runway) -->
+    <section id="arquitectura" class="relative h-[360vh] z-10 bg-grid-pattern">
+        <div class="sticky top-0 h-screen w-full overflow-hidden flex flex-col lg:flex-row items-center justify-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 gap-8 lg:gap-12">
+            
+            <!-- Left Column: Dynamic Feature Callouts synced to scroll -->
+            <div class="w-full lg:w-5/12 z-20 relative h-60 sm:h-64 lg:h-80 flex items-center">
+                
+                <!-- Step 0: Assembled Core -->
+                <div class="arch-step absolute inset-0 flex flex-col justify-center transition-all duration-500" data-step="0">
+                    <span class="text-xs font-bold font-mono uppercase tracking-widest text-cyan-400 mb-2">01 // ECOSISTEMA INTEGRAL 360°</span>
+                    <h3 class="text-3xl sm:text-5xl font-black text-white tracking-tight mb-3">Núcleo Hay Soluciones</h3>
+                    <p class="text-zinc-400 text-sm sm:text-base leading-relaxed">
+                        Unimos lo que otras agencias separan: Estrategia de Marketing, Programación a Medida e Inteligencia Artificial en una sola arquitectura. Haz scroll para despiezar nuestras capas.
+                    </p>
+                </div>
+
+                <!-- Step 1: Layer 1 - Marketing & Growth -->
+                <div class="arch-step absolute inset-0 flex flex-col justify-center opacity-0 translate-y-8 transition-all duration-500 pointer-events-none" data-step="1">
+                    <span class="text-xs font-bold font-mono uppercase tracking-widest text-cyan-400 mb-2">02 // CAPA DE ATRACCIÓN & VENTAS</span>
+                    <h3 class="text-3xl sm:text-5xl font-black text-white tracking-tight mb-3">Marketing Digital & Growth</h3>
+                    <p class="text-zinc-400 text-sm sm:text-base leading-relaxed">
+                        Campañas en Meta Ads, Google Ads, TikTok, SEO, Branding y embudos de conversión diseñados con psicología de ventas para atraer clientes calificados todos los días.
+                    </p>
+                </div>
+
+                <!-- Step 2: Layer 2 - Neural AI Engine -->
+                <div class="arch-step absolute inset-0 flex flex-col justify-center opacity-0 translate-y-8 transition-all duration-500 pointer-events-none" data-step="2">
+                    <span class="text-xs font-bold font-mono uppercase tracking-widest text-purple-400 mb-2">03 // AUTOMATIZACIÓN INTELIGENTE</span>
+                    <h3 class="text-3xl sm:text-5xl font-black text-white tracking-tight mb-3">Inteligencia Artificial Aplicada</h3>
+                    <p class="text-zinc-400 text-sm sm:text-base leading-relaxed">
+                        Agentes de IA en WhatsApp, Instagram y Web que atienden en 1 segundo, califican prospectos, agendan citas, cierran ventas y automatizan tareas repetitivas 24/7.
+                    </p>
+                </div>
+
+                <!-- Step 3: Layer 3 - Programming & Software Development -->
+                <div class="arch-step absolute inset-0 flex flex-col justify-center opacity-0 translate-y-8 transition-all duration-500 pointer-events-none" data-step="3">
+                    <span class="text-xs font-bold font-mono uppercase tracking-widest text-emerald-400 mb-2">04 // INGENIERÍA & CÓDIGO PURO</span>
+                    <h3 class="text-3xl sm:text-5xl font-black text-white tracking-tight mb-3">Programación & Desarrollo</h3>
+                    <p class="text-zinc-400 text-sm sm:text-base leading-relaxed">
+                        Desarrollo de páginas web de alto impacto, E-Commerce, Apps móviles (iOS/Android), sistemas ERP/CRM a medida e integraciones por API listas para escalar.
+                    </p>
+                </div>
+
+                <!-- Step Progress Pills -->
+                <div class="absolute bottom-0 left-0 flex items-center gap-2">
+                    <div class="arch-dot h-1.5 w-8 rounded-full bg-cyan-400 transition-all duration-300"></div>
+                    <div class="arch-dot h-1.5 w-2 rounded-full bg-zinc-700 transition-all duration-300"></div>
+                    <div class="arch-dot h-1.5 w-2 rounded-full bg-zinc-700 transition-all duration-300"></div>
+                    <div class="arch-dot h-1.5 w-2 rounded-full bg-zinc-700 transition-all duration-300"></div>
+                    <span id="arch-percent" class="ml-3 text-xs font-mono text-cyan-400">DESPIECE: 0%</span>
+                </div>
+            </div>
+
+            <!-- Right Column: Interactive 3D Isometric Exploding Stack -->
+            <div class="w-full lg:w-7/12 flex items-center justify-center scene-3d h-[380px] sm:h-[480px]">
+                <div id="hardware-stack" class="hardware-stack relative w-64 h-64 sm:w-80 sm:h-80 flex items-center justify-center" style="transform: rotateX(58deg) rotateZ(-38deg);">
+                    
+                    <!-- Glowing Vertical Energy Conduit passing through all layers -->
+                    <div id="energy-beam" class="absolute w-16 h-16 rounded-full bg-cyan-400/20 blur-xl pointer-events-none transition-opacity duration-300 opacity-0"></div>
+
+                    <!-- Layer 4 (Bottom): Backend, APIs & Custom Software -->
+                    <div id="layer-bottom" class="hw-layer absolute inset-0 rounded-3xl bg-gradient-to-br from-emerald-950/95 via-zinc-900 to-black border-2 border-emerald-500/50 shadow-[0_0_50px_rgba(16,185,129,0.25)] flex flex-col justify-between p-6">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] font-mono uppercase tracking-widest text-emerald-400">L4 // PROGRAMACIÓN & SISTEMAS</span>
+                            <i data-lucide="code-2" class="w-5 h-5 text-emerald-400"></i>
+                        </div>
+                        <div class="grid grid-cols-4 gap-2 my-auto opacity-80">
+                            <div class="h-8 rounded bg-emerald-500/20 border border-emerald-500/40 animate-pulse"></div>
+                            <div class="h-8 rounded bg-emerald-500/20 border border-emerald-500/40"></div>
+                            <div class="h-8 rounded bg-emerald-500/20 border border-emerald-500/40 animate-pulse"></div>
+                            <div class="h-8 rounded bg-emerald-500/20 border border-emerald-500/40"></div>
+                        </div>
+                        <div class="text-[11px] font-mono text-zinc-400">FULL-STACK • APIS • CLOUD</div>
+                    </div>
+
+                    <!-- Layer 3 (Middle-Low): Web & Mobile Development -->
+                    <div id="layer-mid-low" class="hw-layer absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-950/95 via-zinc-900 to-black border-2 border-blue-500/50 shadow-[0_0_50px_rgba(59,130,246,0.25)] flex flex-col justify-between p-6">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] font-mono uppercase tracking-widest text-blue-400">L3 // DESARROLLO WEB & APPS</span>
+                            <i data-lucide="smartphone" class="w-5 h-5 text-blue-400"></i>
+                        </div>
+                        <div class="flex items-center justify-center my-auto">
+                            <div class="w-24 h-24 rounded-full border border-dashed border-blue-400/60 flex items-center justify-center">
+                                <div class="w-12 h-12 rounded-full bg-blue-500/30 animate-ping"></div>
+                            </div>
+                        </div>
+                        <div class="text-[11px] font-mono text-zinc-400">E-COMMERCE • APPS IOS/ANDROID</div>
+                    </div>
+
+                    <!-- Layer 2 (Middle-High): Neural AI Core -->
+                    <div id="layer-mid-high" class="hw-layer absolute inset-0 rounded-3xl bg-gradient-to-br from-purple-950/95 via-zinc-900 to-black border-2 border-purple-500/60 shadow-[0_0_60px_rgba(168,85,247,0.3)] flex flex-col justify-between p-6 overflow-hidden">
+                        <div class="laser-line absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-purple-400 to-transparent shadow-[0_0_12px_#c084fc]"></div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] font-mono uppercase tracking-widest text-purple-300">L2 // INTELIGENCIA ARTIFICIAL</span>
+                            <i data-lucide="brain-circuit" class="w-5 h-5 text-purple-400"></i>
+                        </div>
+                        <div class="my-auto flex items-center justify-center">
+                            <div class="px-4 py-2 rounded-xl bg-purple-500/20 border border-purple-400/50 text-xs font-mono text-purple-200 shadow-[0_0_20px_rgba(168,85,247,0.4)]">
+                                AGENTES IA & BOTS
+                            </div>
+                        </div>
+                        <div class="text-[11px] font-mono text-zinc-400">AUTOMATIZACIÓN • LLM • CRM</div>
+                    </div>
+
+                    <!-- Layer 1 (Top): Marketing & Growth Interface -->
+                    <div id="layer-top" class="hw-layer absolute inset-0 rounded-3xl bg-gradient-to-br from-zinc-800/95 via-zinc-900/95 to-black border-2 border-cyan-400/80 shadow-[0_0_80px_rgba(34,211,238,0.35)] flex flex-col justify-between p-6 backdrop-blur-xl overflow-hidden">
+                        <div class="laser-line absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent shadow-[0_0_15px_#22d3ee]"></div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] font-mono uppercase tracking-widest text-cyan-300">L1 // MARKETING & GROWTH</span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_12px_#22d3ee]"></span>
+                        </div>
+                        <div class="my-auto text-center">
+                            <div class="w-14 h-14 mx-auto mb-2 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/40">
+                                <i data-lucide="trending-up" class="w-7 h-7 text-white"></i>
+                            </div>
+                            <div class="font-black tracking-tight text-white text-lg">HAY SOLUCIONES</div>
+                            <div class="text-[10px] text-cyan-400 tracking-widest uppercase font-mono">Mkt • Dev • AI</div>
+                        </div>
+                        <div class="flex justify-between text-[10px] font-mono text-zinc-400">
+                            <span>ADS & SEO</span>
+                            <span>ALTA CONVERSIÓN</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- SECTION 5: STICKY HORIZONTAL SCROLL SHOWCASE (Apple Pro Display XDR Style - 300vh) -->
+    <section id="horizontal-runway" class="relative h-[300vh] z-10 border-t border-white/10 bg-black/70 backdrop-blur-sm">
+        <div class="sticky top-0 h-screen w-full overflow-hidden flex flex-col justify-center">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full mb-8">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-cyan-400 font-mono text-xs uppercase tracking-widest mb-1">Resultados Reales en Vivo</p>
+                        <h2 class="text-3xl sm:text-5xl font-black tracking-tight text-white">Marketing, Código e IA en Acción.</h2>
+                    </div>
+                    <div class="hidden sm:flex items-center gap-2 text-xs font-mono text-zinc-400">
+                        <span>DESPLAZAMIENTO HORIZONTAL SINCRONIZADO</span>
+                        <i data-lucide="move-right" class="w-4 h-4 text-cyan-400"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Horizontal Sliding Track -->
+            <div class="w-full overflow-hidden pl-4 sm:pl-8 lg:pl-16">
+                <div id="horizontal-track" class="flex gap-6 sm:gap-8 w-max will-change-transform pr-24">
+                    
+                    <!-- Slide 1: Performance Marketing & Funnels -->
+                    <div class="w-[85vw] sm:w-[540px] rounded-3xl bg-gradient-to-br from-zinc-900/90 to-black border border-cyan-500/30 p-8 flex flex-col justify-between min-h-[370px] relative overflow-hidden group">
+                        <div class="absolute -right-12 -top-12 w-44 h-44 bg-cyan-500/15 rounded-full blur-3xl"></div>
+                        <div>
+                            <div class="flex items-center justify-between mb-6">
+                                <span class="px-3 py-1 rounded-full bg-cyan-500/15 text-cyan-300 font-mono text-xs">MARKETING DIGITAL & GROWTH</span>
+                                <span class="text-xs font-mono text-zinc-500">PILAR #01</span>
+                            </div>
+                            <h3 class="text-2xl sm:text-3xl font-bold text-white mb-3">Ecosistemas de Adquisición Masiva</h3>
+                            <p class="text-zinc-400 text-sm sm:text-base leading-relaxed">
+                                Diseñamos estrategias omnicanal en Meta Ads, Google Ads, TikTok y SEO combinadas con Landing Pages de carga instantánea que multiplican el retorno de inversión publicitaria.
+                            </p>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 pt-6 border-t border-white/10 mt-6">
+                            <div>
+                                <div class="text-2xl font-black text-cyan-400">6.4x</div>
+                                <div class="text-[11px] text-zinc-500">ROAS Promedio</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-black text-white">-48%</div>
+                                <div class="text-[11px] text-zinc-500">Costo por Lead</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-black text-emerald-400">+320%</div>
+                                <div class="text-[11px] text-zinc-500">Tráfico Cualificado</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Slide 2: Artificial Intelligence & Chatbots -->
+                    <div class="w-[85vw] sm:w-[540px] rounded-3xl bg-gradient-to-br from-zinc-900/90 to-black border border-purple-500/30 p-8 flex flex-col justify-between min-h-[370px] relative overflow-hidden">
+                        <div class="absolute -right-12 -top-12 w-44 h-44 bg-purple-500/15 rounded-full blur-3xl"></div>
+                        <div>
+                            <div class="flex items-center justify-between mb-6">
+                                <span class="px-3 py-1 rounded-full bg-purple-500/15 text-purple-300 font-mono text-xs">INTELIGENCIA ARTIFICIAL & BOTS</span>
+                                <span class="text-xs font-mono text-zinc-500">PILAR #02</span>
+                            </div>
+                            <h3 class="text-2xl sm:text-3xl font-bold text-white mb-3">Vendedores & Atención con IA 24/7</h3>
+                            <p class="text-zinc-400 text-sm sm:text-base leading-relaxed">
+                                Entrenamos agentes de IA con la información de tu negocio para responder WhatsApp, Instagram y Web en segundos, calificar clientes, agendar reuniones y cerrar ventas en piloto automático.
+                            </p>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 pt-6 border-t border-white/10 mt-6">
+                            <div>
+                                <div class="text-2xl font-black text-purple-400">1.2s</div>
+                                <div class="text-[11px] text-zinc-500">Tiempo Respuesta</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-black text-white">+195%</div>
+                                <div class="text-[11px] text-zinc-500">Cierre de Ventas</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-black text-cyan-400">24/7</div>
+                                <div class="text-[11px] text-zinc-500">Atención Continua</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Slide 3: Web, E-Commerce & App Development -->
+                    <div class="w-[85vw] sm:w-[540px] rounded-3xl bg-gradient-to-br from-zinc-900/90 to-black border border-emerald-500/30 p-8 flex flex-col justify-between min-h-[370px] relative overflow-hidden">
+                        <div class="absolute -right-12 -top-12 w-44 h-44 bg-emerald-500/15 rounded-full blur-3xl"></div>
+                        <div>
+                            <div class="flex items-center justify-between mb-6">
+                                <span class="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-300 font-mono text-xs">DESARROLLO WEB, APPS & E-COMMERCE</span>
+                                <span class="text-xs font-mono text-zinc-500">PILAR #03</span>
+                            </div>
+                            <h3 class="text-2xl sm:text-3xl font-bold text-white mb-3">Plataformas Digitales que Enamoran y Venden</h3>
+                            <p class="text-zinc-400 text-sm sm:text-base leading-relaxed">
+                                Desarrollamos sitios web inmersivos como este, tiendas online de alta conversión y aplicaciones móviles para iOS y Android con pasarelas de pago e inventario en tiempo real.
+                            </p>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 pt-6 border-t border-white/10 mt-6">
+                            <div>
+                                <div class="text-2xl font-black text-emerald-400">99/100</div>
+                                <div class="text-[11px] text-zinc-500">Google PageSpeed</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-black text-white">3.8x</div>
+                                <div class="text-[11px] text-zinc-500">Más Conversión Web</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-black text-cyan-400">iOS/And</div>
+                                <div class="text-[11px] text-zinc-500">Apps Nativas</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Slide 4: Custom Programming & Automation -->
+                    <div class="w-[85vw] sm:w-[540px] rounded-3xl bg-gradient-to-br from-zinc-900/90 to-black border border-blue-500/30 p-8 flex flex-col justify-between min-h-[370px] relative overflow-hidden">
+                        <div class="absolute -right-12 -top-12 w-44 h-44 bg-blue-500/15 rounded-full blur-3xl"></div>
+                        <div>
+                            <div class="flex items-center justify-between mb-6">
+                                <span class="px-3 py-1 rounded-full bg-blue-500/15 text-blue-300 font-mono text-xs">PROGRAMACIÓN A MEDIDA & SISTEMAS</span>
+                                <span class="text-xs font-mono text-zinc-500">PILAR #04</span>
+                            </div>
+                            <h3 class="text-2xl sm:text-3xl font-bold text-white mb-3">Software Empresarial, CRMs & APIs</h3>
+                            <p class="text-zinc-400 text-sm sm:text-base leading-relaxed">
+                                Programamos plataformas SaaS, paneles administrativos, sistemas de facturación y conectamos todas tus herramientas (CRM, ERP, WhatsApp, Bancos) para que tu negocio funcione como un reloj.
+                            </p>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 pt-6 border-t border-white/10 mt-6">
+                            <div>
+                                <div class="text-2xl font-black text-blue-400">100%</div>
+                                <div class="text-[11px] text-zinc-500">Código a Medida</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-black text-white">API</div>
+                                <div class="text-[11px] text-zinc-500">Integración Total</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-black text-emerald-400">-75%</div>
+                                <div class="text-[11px] text-zinc-500">Carga Operativa</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 6: BENTO GRID ECOSYSTEM WITH 3D TILT -->
+    <section id="ecosistema" class="relative z-10 py-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div class="text-center max-w-3xl mx-auto mb-20 reveal-up">
+            <p class="text-cyan-400 font-semibold text-xs sm:text-sm uppercase tracking-widest mb-3">Nuestros Servicios Integrados</p>
+            <h2 class="text-4xl sm:text-6xl font-bold tracking-tight text-gradient-titanium mb-6">
+                Todo lo que tu empresa necesita.<br>En un solo lugar.
+            </h2>
+            <p class="text-zinc-400 text-base sm:text-lg">
+                Pasa el cursor sobre cada módulo para explorar cómo combinamos creatividad, código e inteligencia artificial.
+            </p>
+        </div>
+
+        <div id="bento-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <!-- Large Bento Item 1 (2 cols): AI & Automation -->
+            <div class="bento-card md:col-span-2 rounded-3xl p-8 sm:p-10 flex flex-col justify-between min-h-[360px] reveal-up">
+                <div class="relative z-10">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs font-medium mb-4">
+                        <i data-lucide="bot" class="w-3.5 h-3.5"></i> Inteligencia Artificial & Automatización
+                    </div>
+                    <h3 class="text-2xl sm:text-4xl font-bold text-white tracking-tight mb-3">
+                        Agentes de IA que atienden, venden y automatizan tu negocio.
+                    </h3>
+                    <p class="text-zinc-400 text-sm sm:text-base max-w-xl">
+                        Implementamos chatbots con IA generativa en WhatsApp, Instagram y tu Web conectados a tu CRM e inventario. Atienden miles de mensajes al instante, cierran pedidos y automatizan flujos con n8n, Make y Python.
+                    </p>
+                </div>
+
+                <!-- Interactive Live Terminal Preview inside Bento -->
+                <div class="relative z-10 mt-8 bg-black/70 border border-white/10 rounded-2xl p-4 font-mono text-xs text-zinc-300">
+                    <div class="flex items-center justify-between border-b border-white/10 pb-2 mb-3">
+                        <div class="flex gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-rose-500/80"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
+                        </div>
+                        <span class="text-[10px] text-zinc-500">hay-soluciones-growth-ai.sh</span>
+                    </div>
+                    <div class="space-y-1.5">
+                        <p><span class="text-cyan-400">➜</span> Campaña Meta Ads activa: 340 nuevos prospectos captados hoy...</p>
+                        <p><span class="text-emerald-400">✔</span> Agente IA de WhatsApp calificó y agendó 68 citas automáticamente.</p>
+                        <p class="text-purple-300 animate-pulse">⚡ Ventas generadas por el ecosistema este mes: +$48,500 USD</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bento Item 2 (1 col): Marketing Digital & Growth -->
+            <div class="bento-card rounded-3xl p-8 flex flex-col justify-between min-h-[360px] reveal-up">
+                <div class="relative z-10">
+                    <div class="w-12 h-12 rounded-2xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center mb-6">
+                        <i data-lucide="megaphone" class="w-6 h-6 text-purple-400"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white tracking-tight mb-3">
+                        Marketing Digital & Tráfico
+                    </h3>
+                    <p class="text-zinc-400 text-sm leading-relaxed">
+                        Gestión experta de Meta Ads, Google Ads, TikTok Ads, SEO, creación de contenido viral y embudos de venta enfocados 100% en retorno de inversión.
+                    </p>
+                </div>
+
+                <div class="relative z-10 mt-6 pt-6 border-t border-white/10 flex items-baseline justify-between">
+                    <div>
+                        <div class="text-3xl font-extrabold text-white">+300%</div>
+                        <div class="text-xs text-zinc-500">Crecimiento en captación de clientes</div>
+                    </div>
+                    <span class="text-xs font-mono text-purple-400">Ads • SEO • Funnels</span>
+                </div>
+            </div>
+
+            <!-- Bento Item 3 (1 col): Web & Apps -->
+            <div class="bento-card rounded-3xl p-8 flex flex-col justify-between min-h-[340px] reveal-up">
+                <div class="relative z-10">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mb-6">
+                        <i data-lucide="layout" class="w-6 h-6 text-emerald-400"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white tracking-tight mb-3">
+                        Desarrollo Web & Apps Móviles
+                    </h3>
+                    <p class="text-zinc-400 text-sm leading-relaxed">
+                        Páginas web impactantes, tiendas E-Commerce y aplicaciones nativas iOS y Android con diseño UI/UX de clase mundial y velocidad extrema.
+                    </p>
+                </div>
+                <div class="relative z-10 mt-6 flex items-center gap-2 text-emerald-400 text-xs font-semibold">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    Diseño UI/UX + Conversión Optimizada
+                </div>
+            </div>
+
+            <!-- Large Bento Item 4 (2 cols): Custom Programming & Software -->
+            <div class="bento-card md:col-span-2 rounded-3xl p-8 sm:p-10 flex flex-col justify-between min-h-[340px] reveal-up">
+                <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div class="max-w-lg">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-medium mb-4">
+                            <i data-lucide="terminal" class="w-3.5 h-3.5"></i> Programación & Software a Medida
+                        </div>
+                        <h3 class="text-2xl sm:text-4xl font-bold text-white tracking-tight mb-3">
+                            Si lo puedes imaginar, lo podemos programar.
+                        </h3>
+                        <p class="text-zinc-400 text-sm sm:text-base">
+                            Desarrollamos sistemas web complejos, plataformas SaaS, CRMs personalizados, paneles de control y conectamos tus sistemas mediante APIs para digitalizar tu empresa de punta a punta.
+                        </p>
+                    </div>
+
+                    <!-- Mini visual gauge -->
+                    <div class="flex-shrink-0 bg-zinc-900/90 border border-white/10 rounded-2xl p-6 text-center min-w-[200px]">
+                        <div class="text-4xl font-black text-gradient-cyan mb-1">100%</div>
+                        <div class="text-xs text-zinc-400 uppercase tracking-wider mb-4">Escalable & Seguro</div>
+                        <div class="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
+                            <div class="bg-gradient-to-r from-cyan-400 to-blue-500 h-full w-[95%]"></div>
+                        </div>
+                        <div class="text-[11px] text-zinc-500 mt-2">React • Node • Python • Cloud</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- SECTION 5: TELEMETRY & BENCHMARKS (Apple Silicon Comparison Style) -->
+    <section id="telemetria" class="relative z-10 py-28 bg-zinc-950/90 border-y border-white/10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-3xl mb-16 reveal-up">
+                <p class="text-cyan-400 font-semibold text-xs sm:text-sm uppercase tracking-widest mb-3">Rendimiento Brutal</p>
+                <h2 class="text-4xl sm:text-6xl font-bold tracking-tight text-white mb-4">
+                    Por qué superamos a las agencias tradicionales.
+                </h2>
+                <p class="text-zinc-400 text-base sm:text-lg">
+                    Mientras una agencia tradicional solo sube posts o un programador aislado solo escribe código, en <span class="text-white font-medium">Hay Soluciones</span> unimos Marketing + Desarrollo + IA bajo una misma estrategia.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <!-- Animated Bars -->
+                <div class="space-y-8 reveal-up">
+                    <!-- Metric 1 -->
+                    <div>
+                        <div class="flex justify-between items-baseline mb-2">
+                            <span class="text-sm font-semibold text-white">Retorno de Inversión en Marketing & Ventas (ROAS)</span>
+                            <span class="text-2xl font-extrabold text-cyan-400">4.8x más conversión</span>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="h-4 rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 w-full shadow-[0_0_25px_rgba(34,211,238,0.3)]"></div>
+                            <div class="flex items-center gap-3">
+                                <div class="h-3 rounded-full bg-zinc-700 w-1/4"></div>
+                                <span class="text-xs text-zinc-500">Agencias de marketing tradicionales sin IA ni código</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metric 2 -->
+                    <div>
+                        <div class="flex justify-between items-baseline mb-2">
+                            <span class="text-sm font-semibold text-white">Velocidad de Desarrollo Web, Apps & Sistemas</span>
+                            <span class="text-2xl font-extrabold text-purple-400">3.5x más rápido</span>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="h-4 rounded-full bg-gradient-to-r from-purple-400 to-pink-500 w-[94%] shadow-[0_0_25px_rgba(168,85,247,0.3)]"></div>
+                            <div class="flex items-center gap-3">
+                                <div class="h-3 rounded-full bg-zinc-700 w-[25%]"></div>
+                                <span class="text-xs text-zinc-500">Desarrollo tradicional lento y desconectado del negocio</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metric 3 -->
+                    <div>
+                        <div class="flex justify-between items-baseline mb-2">
+                            <span class="text-sm font-semibold text-white">Atención de Leads y Automatización con IA</span>
+                            <span class="text-2xl font-extrabold text-emerald-400">Hasta 92%</span>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="h-4 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-500 w-[92%] shadow-[0_0_25px_rgba(16,185,129,0.3)]"></div>
+                            <div class="flex items-center gap-3">
+                                <div class="h-3 rounded-full bg-zinc-700 w-[20%]"></div>
+                                <span class="text-xs text-zinc-500">Equipos respondiendo mensajes manualmente horas después</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Counter Cards -->
+                <div class="grid grid-cols-2 gap-5 reveal-up">
+                    <div class="p-6 sm:p-8 rounded-3xl bg-zinc-900/70 border border-white/10">
+                        <div class="text-4xl sm:text-5xl font-black text-white mb-2">360°</div>
+                        <p class="text-xs sm:text-sm text-zinc-400">Marketing, Programación, Diseño e IA en un solo equipo.</p>
+                    </div>
+                    <div class="p-6 sm:p-8 rounded-3xl bg-zinc-900/70 border border-white/10">
+                        <div class="text-4xl sm:text-5xl font-black text-gradient-cyan mb-2">&lt;2 seg</div>
+                        <p class="text-xs sm:text-sm text-zinc-400">Tiempo en que nuestros bots con IA atienden a tus prospectos.</p>
+                    </div>
+                    <div class="p-6 sm:p-8 rounded-3xl bg-zinc-900/70 border border-white/10">
+                        <div class="text-4xl sm:text-5xl font-black text-white mb-2">+180</div>
+                        <p class="text-xs sm:text-sm text-zinc-400">Proyectos de software, web, IA y campañas lanzados con éxito.</p>
+                    </div>
+                    <div class="p-6 sm:p-8 rounded-3xl bg-zinc-900/70 border border-white/10">
+                        <div class="text-4xl sm:text-5xl font-black text-purple-400 mb-2">24/7</div>
+                        <p class="text-xs sm:text-sm text-zinc-400">Tus campañas, páginas web y agentes de IA vendiendo sin parar.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 6: INTERACTIVE SOLUTION & ROI SIMULATOR -->
+    <section id="simulador" class="relative z-10 py-28 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+        <div class="rounded-3xl bg-gradient-to-b from-zinc-900/90 to-black border border-white/15 p-8 sm:p-12 shadow-2xl backdrop-blur-2xl reveal-up">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/10 pb-8 mb-8">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-widest text-cyan-400">Simulador de Crecimiento en Vivo</span>
+                    <h2 class="text-3xl sm:text-4xl font-bold text-white mt-1">Calcula el Impacto de Hay Soluciones</h2>
+                </div>
+                <div class="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs text-zinc-300">
+                    Elige qué área quieres potenciar hoy
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+                <!-- Controls -->
+                <div class="lg:col-span-7 space-y-6">
+                    <div>
+                        <label class="text-xs font-semibold uppercase tracking-wider text-zinc-400 block mb-3">1. ¿Qué necesitas impulsar primero?</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="solution-selector">
+                            <button type="button" onclick="selectSolution('ai', this)" class="sol-btn active-sol text-left p-4 rounded-2xl border border-cyan-400 bg-cyan-500/10 transition-all">
+                                <i data-lucide="sparkles" class="w-5 h-5 text-cyan-400 mb-2"></i>
+                                <div class="font-semibold text-sm text-white">IA & Automatización</div>
+                                <div class="text-[11px] text-zinc-400">Bots, Ventas & Procesos</div>
+                            </button>
+                            <button type="button" onclick="selectSolution('software', this)" class="sol-btn text-left p-4 rounded-2xl border border-white/10 bg-zinc-900/60 hover:border-white/30 transition-all">
+                                <i data-lucide="code-2" class="w-5 h-5 text-purple-400 mb-2"></i>
+                                <div class="font-semibold text-sm text-white">Programación & Web</div>
+                                <div class="text-[11px] text-zinc-400">Webs, Apps & Sistemas</div>
+                            </button>
+                            <button type="button" onclick="selectSolution('cloud', this)" class="sol-btn text-left p-4 rounded-2xl border border-white/10 bg-zinc-900/60 hover:border-white/30 transition-all">
+                                <i data-lucide="megaphone" class="w-5 h-5 text-emerald-400 mb-2"></i>
+                                <div class="font-semibold text-sm text-white">Marketing Digital</div>
+                                <div class="text-[11px] text-zinc-400">Ads, Tráfico & Embudos</div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-sm mb-2">
+                            <label for="team-slider" class="text-zinc-300 font-medium">Volumen mensual de clientes / prospectos objetivo</label>
+                            <span id="team-size-label" class="font-bold text-cyan-400">500 prospectos/mes</span>
+                        </div>
+                        <input id="team-slider" type="range" min="100" max="5000" step="100" value="500" oninput="updateSimulator()" class="w-full accent-cyan-400 bg-zinc-800 h-2 rounded-lg cursor-pointer">
+                        <div class="flex justify-between text-[11px] text-zinc-500 mt-1">
+                            <span>Negocio en Crecimiento (100)</span>
+                            <span>Escala Media (1,500)</span>
+                            <span>Alta Demanda (5,000+)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Output Box -->
+                <div class="lg:col-span-5 bg-black/80 border border-cyan-500/30 rounded-3xl p-6 sm:p-8 text-center relative overflow-hidden">
+                    <div class="absolute -top-16 -right-16 w-36 h-36 bg-cyan-500/20 rounded-full blur-2xl pointer-events-none"></div>
+                    <p class="text-xs uppercase tracking-widest text-zinc-400 mb-2">Interacciones & horas automatizadas / año</p>
+                    <div id="sim-hours" class="text-5xl sm:text-6xl font-black text-gradient-cyan mb-4">6,400 h</div>
+                    
+                    <div class="border-t border-white/10 pt-4 mt-4 flex justify-around text-left">
+                        <div>
+                            <div class="text-xs text-zinc-500">Crecimiento Estimado</div>
+                            <div id="sim-roi" class="text-xl font-bold text-emerald-400">340% ROI</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-zinc-500">Tiempo de Entrega</div>
+                            <div id="sim-weeks" class="text-xl font-bold text-white">3 Semanas</div>
+                        </div>
+                    </div>
+
+                    <button onclick="openContactModal()" class="mt-6 w-full py-3.5 px-6 rounded-full bg-white text-black font-semibold text-sm hover:bg-cyan-300 transition-colors flex items-center justify-center gap-2">
+                        <span>Cotizar mi Proyecto Ahora</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Modal -->
+    <div id="contact-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-xl p-4">
+        <div class="relative w-full max-w-lg rounded-3xl bg-zinc-950 border border-white/15 p-8 shadow-2xl">
+            <button onclick="closeContactModal()" class="absolute top-5 right-5 text-zinc-400 hover:text-white">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <span class="text-xs font-mono uppercase tracking-widest text-cyan-400">Hay Soluciones // Iniciar Proyecto</span>
+            <h3 class="text-2xl font-bold text-white mt-1 mb-2">Llevemos tu negocio al siguiente nivel</h3>
+            <p class="text-zinc-400 text-sm mb-6">Cuéntanos si necesitas Marketing Digital, Programación, Desarrollo Web/Apps o Inteligencia Artificial.</p>
+            <form id="contact-form" onsubmit="submitForm(event)" class="space-y-4">
+                <input type="text" required placeholder="Tu nombre o empresa" class="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-400">
+                <input type="email" required placeholder="Correo electrónico o WhatsApp" class="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-400">
+                <textarea rows="3" required placeholder="¿Qué quieres lograr? (Ej: Más ventas con Ads, una página web increíble, un bot con IA...)" class="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-400"></textarea>
+                <button type="submit" class="w-full py-3.5 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 text-black font-bold text-sm hover:opacity-95 transition-opacity">
+                    Enviar Solicitud a Hay Soluciones
+                </button>
+                <div id="form-success" class="hidden text-center text-emerald-400 text-xs font-mono pt-2">
+                    ✔ ¡Recibido! Nuestro equipo de Marketing, Desarrollo e IA te contactará muy pronto.
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!--script section replacement-->
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // ==========================================
+        // 0. SPATIAL SCI-FI AUDIO ENGINE (Tone.js)
+        // ==========================================
+        let audioEnabled = false;
+        let synthPad, pingSynth;
+
+        async function toggleSpatialAudio() {
+            const btnLabel = document.getElementById('audio-label');
+            const btnIcon = document.getElementById('audio-icon');
+
+            if (!audioEnabled) {
+                await Tone.start();
+                synthPad = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: "sine" },
+                    envelope: { attack: 0.4, decay: 0.8, sustain: 0.3, release: 1.5 }
+                }).toDestination();
+                synthPad.volume.value = -22;
+
+                pingSynth = new Tone.MembraneSynth({
+                    pitchDecay: 0.02,
+                    octaves: 4,
+                    envelope: { attack: 0.001, decay: 0.2, sustain: 0 }
+                }).toDestination();
+                pingSynth.volume.value = -20;
+
+                synthPad.triggerAttackRelease(["C3", "G3", "B3", "E4"], "2n");
+                audioEnabled = true;
+                btnLabel.textContent = "SFX ON";
+                btnLabel.classList.add('text-cyan-400');
+                btnIcon.setAttribute('data-lucide', 'volume-2');
+                lucide.createIcons();
+            } else {
+                audioEnabled = false;
+                btnLabel.textContent = "SFX OFF";
+                btnLabel.classList.remove('text-cyan-400');
+                btnIcon.setAttribute('data-lucide', 'volume-x');
+                lucide.createIcons();
+            }
+        }
+
+        function playHoverTick(note = "C5") {
+            if (audioEnabled && synthPad) {
+                synthPad.triggerAttackRelease([note], "16n");
+            }
+        }
+
+        // ==========================================
+        // 1. CUSTOM MAGNETIC CURSOR
+        // ==========================================
+        const cursorDot = document.getElementById('custom-cursor-dot');
+        const cursorRing = document.getElementById('custom-cursor-ring');
+        let cursorX = window.innerWidth / 2, cursorY = window.innerHeight / 2;
+        let ringX = cursorX, ringY = cursorY;
+
+        window.addEventListener('mousemove', (e) => {
+            cursorX = e.clientX;
+            cursorY = e.clientY;
+            if (cursorDot) {
+                cursorDot.style.transform = `translate(${cursorX}px, ${cursorY}px) translate(-50%, -50%)`;
+            }
+        });
+
+        document.querySelectorAll('a, button, .bento-card, input').forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                document.body.classList.add('cursor-hover');
+                playHoverTick("E5");
+            });
+            el.addEventListener('mouseleave', () => {
+                document.body.classList.remove('cursor-hover');
+            });
+        });
+
+        // ==========================================
+        // 2. MANIFESTO WORD-BY-WORD PREPARATION
+        // ==========================================
+        const manifestoPhrase = "No somos una agencia más. Fusionamos marketing estratégico, programación de élite, desarrollo a medida e inteligencia artificial para convertir tu marca en una máquina imparable de ventas.";
+        const manifestoContainer = document.getElementById('manifesto-text');
+        const words = manifestoPhrase.split(' ');
+        
+        words.forEach((word) => {
+            const span = document.createElement('span');
+            span.textContent = word;
+            span.className = 'manifesto-word transition-colors duration-200 text-zinc-800';
+            manifestoContainer.appendChild(span);
+        });
+        const manifestoSpans = document.querySelectorAll('.manifesto-word');
+
+        // ==========================================
+        // 3. THREE.JS 3D HYPERSPACE & GYROSCOPE CORE
+        // ==========================================
+        let scene, camera, renderer, coreGroup, particleSystem, wireSphere, ring1, ring2, ring3;
+        let mouseX = 0, mouseY = 0;
+        let targetRotationX = 0, targetRotationY = 0;
+        let scrollVelocity = 0;
+        let lastScrollTop = 0;
+
+        function initThreeJS() {
+            const canvas = document.getElementById('three-canvas');
+            scene = new THREE.Scene();
+
+            camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 28;
+
+            renderer = new THREE.WebGLRenderer({
+                canvas: canvas,
+                alpha: true,
+                antialias: true
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            coreGroup = new THREE.Group();
+            scene.add(coreGroup);
+
+            // Inner Wireframe Icosahedron (Neural Core)
+            const icoGeo = new THREE.IcosahedronGeometry(6.2, 2);
+            const icoMat = new THREE.MeshBasicMaterial({
+                color: 0x22d3ee,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.22
+            });
+            wireSphere = new THREE.Mesh(icoGeo, icoMat);
+            coreGroup.add(wireSphere);
+
+            // Gyroscopic Orbital Rings
+            const torusGeo1 = new THREE.TorusGeometry(8.5, 0.04, 16, 120);
+            const torusMat1 = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.45 });
+            ring1 = new THREE.Mesh(torusGeo1, torusMat1);
+            ring1.rotation.x = Math.PI / 3;
+            coreGroup.add(ring1);
+
+            const torusGeo2 = new THREE.TorusGeometry(10.8, 0.04, 16, 120);
+            const torusMat2 = new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.35 });
+            ring2 = new THREE.Mesh(torusGeo2, torusMat2);
+            ring2.rotation.y = Math.PI / 2.5;
+            coreGroup.add(ring2);
+
+            const torusGeo3 = new THREE.TorusGeometry(13.2, 0.03, 16, 120);
+            const torusMat3 = new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.25 });
+            ring3 = new THREE.Mesh(torusGeo3, torusMat3);
+            ring3.rotation.x = -Math.PI / 4;
+            coreGroup.add(ring3);
+
+            // Outer Warp Particle Field
+            const particleCount = 1800;
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+
+            const colorCyan = new THREE.Color(0x22d3ee);
+            const colorPurple = new THREE.Color(0xa855f7);
+            const colorEmerald = new THREE.Color(0x34d399);
+
+            for (let i = 0; i < particleCount; i++) {
+                const radius = 8 + Math.random() * 34;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos((Math.random() * 2) - 1);
+
+                positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+                positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 90; // Deep Z tunnel for fly-through
+
+                const rand = Math.random();
+                const mixedColor = rand < 0.5 
+                    ? colorCyan.clone().lerp(colorPurple, Math.random())
+                    : colorCyan.clone().lerp(colorEmerald, Math.random());
+
+                colors[i * 3] = mixedColor.r;
+                colors[i * 3 + 1] = mixedColor.g;
+                colors[i * 3 + 2] = mixedColor.b;
+            }
+
+            const particleGeo = new THREE.BufferGeometry();
+            particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particleGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const particleMat = new THREE.PointsMaterial({
+                size: 0.16,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.85
+            });
+
+            particleSystem = new THREE.Points(particleGeo, particleMat);
+            coreGroup.add(particleSystem);
+
+            window.addEventListener('mousemove', (e) => {
+                mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+                mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+            });
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        // ==========================================
+        // 4. APPLE SCROLLYTELLING PARALLAX ENGINE
+        // ==========================================
+        const scrollProgressBar = document.getElementById('scroll-progress');
+        const heroRunway = document.getElementById('hero-runway');
+        const heroStage1 = document.getElementById('hero-stage-1');
+        const heroStage2 = document.getElementById('hero-stage-2');
+        const scrollPrompt = document.getElementById('scroll-prompt');
+        const portalRunway = document.getElementById('portal-runway');
+        const portalGiantText = document.getElementById('portal-giant-text');
+        const portalSub = document.getElementById('portal-sub');
+        const portalDesc = document.getElementById('portal-desc');
+        const portalBackdrop = document.getElementById('portal-backdrop');
+        const portalInnerReveal = document.getElementById('portal-inner-reveal');
+        const manifestoRunway = document.getElementById('manifesto-runway');
+        const archSection = document.getElementById('arquitectura');
+        const hwStack = document.getElementById('hardware-stack');
+        const layerTop = document.getElementById('layer-top');
+        const layerMidHigh = document.getElementById('layer-mid-high');
+        const layerMidLow = document.getElementById('layer-mid-low');
+        const layerBottom = document.getElementById('layer-bottom');
+        const energyBeam = document.getElementById('energy-beam');
+        const archPercent = document.getElementById('arch-percent');
+        const archSteps = document.querySelectorAll('.arch-step');
+        const archDots = document.querySelectorAll('.arch-dot');
+        const horizontalRunway = document.getElementById('horizontal-runway');
+        const horizontalTrack = document.getElementById('horizontal-track');
+        const islandStatus = document.getElementById('island-status');
+        const hudDepth = document.getElementById('hud-depth');
+        const hudDepthMarker = document.getElementById('hud-depth-marker');
+        const hudCoords = document.getElementById('hud-coords');
+
+        let lastStepPlayed = 0;
+
+        function clamp(val, min, max) {
+            return Math.max(min, Math.min(max, val));
+        }
+
+        function handleScrollScrollytelling() {
+            const scrollY = window.scrollY;
+            const vh = window.innerHeight;
+            const maxScroll = document.documentElement.scrollHeight - vh;
+            const globalProgress = clamp(scrollY / maxScroll, 0, 1);
+
+            scrollVelocity = Math.abs(scrollY - lastScrollTop);
+            lastScrollTop = scrollY;
+
+            // Top progress bar & HUD depth
+            scrollProgressBar.style.width = `${globalProgress * 100}%`;
+            if (hudDepth && hudDepthMarker) {
+                const meters = Math.floor(globalProgress * 9999).toString().padStart(4, '0');
+                hudDepth.textContent = `${meters}m`;
+                hudDepthMarker.style.top = `${globalProgress * 100}%`;
+            }
+
+            // Dynamic Island status updater
+            if (globalProgress < 0.16) {
+                islandStatus.textContent = "01 // Marketing, Dev & IA";
+            } else if (globalProgress < 0.32) {
+                islandStatus.textContent = "02 // Portal GrowthCore";
+            } else if (globalProgress < 0.45) {
+                islandStatus.textContent = "03 // Nuestro Manifiesto";
+            } else if (globalProgress < 0.68) {
+                islandStatus.textContent = "04 // Arquitectura 360°";
+            } else if (globalProgress < 0.85) {
+                islandStatus.textContent = "05 // Soluciones & Resultados";
+            } else {
+                islandStatus.textContent = "06 // Simulador de Crecimiento";
+            }
+
+            // 1. HERO PARALLAX LOGIC
+            const heroRect = heroRunway.getBoundingClientRect();
+            const heroTotalScroll = heroRunway.offsetHeight - vh;
+            const heroProgress = clamp(-heroRect.top / heroTotalScroll, 0, 1);
+
+            scrollPrompt.style.opacity = heroProgress > 0.06 ? '0' : '1';
+
+            const s1Progress = clamp(heroProgress / 0.45, 0, 1);
+            const s1Scale = 1 + Math.pow(s1Progress, 1.6) * 1.4;
+            const s1Opacity = 1 - Math.pow(s1Progress, 1.3);
+            heroStage1.style.transform = `scale(${s1Scale}) translateY(${-s1Progress * 50}px)`;
+            heroStage1.style.opacity = s1Opacity;
+
+            const s2Progress = clamp((heroProgress - 0.40) / 0.55, 0, 1);
+            const s2Scale = 0.82 + s2Progress * 0.35;
+            heroStage2.style.opacity = clamp(s2Progress < 0.5 ? s2Progress * 2.4 : 2.3 - s2Progress * 2.1, 0, 1);
+            heroStage2.style.transform = `scale(${s2Scale})`;
+
+            // 2. GIANT PORTAL ZOOM-THROUGH (Apple Chip Reveal)
+            const portalRect = portalRunway.getBoundingClientRect();
+            const portalTotal = portalRunway.offsetHeight - vh;
+            const portalProgress = clamp(-portalRect.top / portalTotal, 0, 1);
+
+            const zoomScale = 1 + Math.pow(portalProgress, 2.6) * 38;
+            portalGiantText.style.transform = `scale(${zoomScale})`;
+            portalSub.style.opacity = clamp(1 - portalProgress * 3, 0, 1);
+            portalDesc.style.opacity = clamp(1 - portalProgress * 3, 0, 1);
+            portalBackdrop.style.opacity = clamp(1 - (portalProgress - 0.45) * 2.2, 0, 1);
+
+            const innerRevealProgress = clamp((portalProgress - 0.42) / 0.45, 0, 1);
+            portalInnerReveal.style.opacity = innerRevealProgress;
+            portalInnerReveal.style.transform = `scale(${0.88 + innerRevealProgress * 0.12})`;
+
+            // 3. MANIFESTO WORD-BY-WORD ILLUMINATION
+            const manRect = manifestoRunway.getBoundingClientRect();
+            const manTotal = manifestoRunway.offsetHeight - vh;
+            const manProgress = clamp(-manRect.top / manTotal, 0, 1);
+            const activeWordCount = Math.floor(manProgress * manifestoSpans.length * 1.15);
+
+            manifestoSpans.forEach((span, idx) => {
+                if (idx < activeWordCount) {
+                    span.className = 'manifesto-word transition-colors duration-200 text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.25)]';
+                } else if (idx === activeWordCount) {
+                    span.className = 'manifesto-word transition-colors duration-200 text-cyan-400';
+                } else {
+                    span.className = 'manifesto-word transition-colors duration-200 text-zinc-800';
+                }
+            });
+
+            // 4. 3D EXPLODING HARDWARE STACK LOGIC
+            const archRect = archSection.getBoundingClientRect();
+            const archTotal = archSection.offsetHeight - vh;
+            const archProgress = clamp(-archRect.top / archTotal, 0, 1);
+
+            const spread = archProgress * 125;
+            const rotZ = -38 + (archProgress * 45);
+            const rotX = 58 - (archProgress * 10);
+
+            hwStack.style.transform = `rotateX(${rotX}deg) rotateZ(${rotZ}deg)`;
+            layerTop.style.transform = `translateZ(${spread * 1.55}px)`;
+            layerMidHigh.style.transform = `translateZ(${spread * 0.52}px)`;
+            layerMidLow.style.transform = `translateZ(${-spread * 0.52}px)`;
+            layerBottom.style.transform = `translateZ(${-spread * 1.55}px)`;
+
+            if (energyBeam) {
+                energyBeam.style.opacity = archProgress > 0.1 ? '1' : '0';
+                energyBeam.style.transform = `scale(${1 + archProgress * 2})`;
+            }
+            if (archPercent) {
+                archPercent.textContent = `DESPIECE: ${Math.round(archProgress * 100)}%`;
+            }
+
+            const currentStep = Math.min(3, Math.floor(archProgress * 4));
+            if (currentStep !== lastStepPlayed && archProgress > 0.02 && archProgress < 0.98) {
+                playHoverTick(["C4", "E4", "G4", "C5"][currentStep]);
+                lastStepPlayed = currentStep;
+            }
+
+            archSteps.forEach((stepEl, idx) => {
+                if (idx === currentStep) {
+                    stepEl.classList.remove('opacity-0', 'translate-y-8', 'pointer-events-none');
+                    stepEl.classList.add('opacity-100', 'translate-y-0');
+                } else {
+                    stepEl.classList.add('opacity-0', 'translate-y-8', 'pointer-events-none');
+                    stepEl.classList.remove('opacity-100', 'translate-y-0');
+                }
+            });
+
+            archDots.forEach((dot, idx) => {
+                if (idx === currentStep) {
+                    dot.className = 'arch-dot h-1.5 w-8 rounded-full bg-cyan-400 transition-all duration-300 shadow-[0_0_10px_#22d3ee]';
+                } else {
+                    dot.className = 'arch-dot h-1.5 w-2 rounded-full bg-zinc-700 transition-all duration-300';
+                }
+            });
+
+            // 5. HORIZONTAL SCROLL GALLERY TRACK
+            if (horizontalRunway && horizontalTrack) {
+                const horizRect = horizontalRunway.getBoundingClientRect();
+                const horizTotal = horizontalRunway.offsetHeight - vh;
+                const horizProgress = clamp(-horizRect.top / horizTotal, 0, 1);
+                const maxTranslateX = Math.max(0, horizontalTrack.scrollWidth - window.innerWidth + 60);
+                horizontalTrack.style.transform = `translate3d(${-horizProgress * maxTranslateX}px, 0, 0)`;
+            }
+
+            // 6. UPDATE 3D CORE CAMERA FLY-THROUGH BASED ON SCROLL
+            if (coreGroup && camera) {
+                targetRotationY = globalProgress * Math.PI * 5;
+                targetRotationX = globalProgress * Math.PI * 2.2;
+                // Camera flies deep through the quantum core and emerges on the other side
+                const camZ = 28 - Math.sin(globalProgress * Math.PI) * 21;
+                camera.position.z = camZ;
+
+                if (hudCoords) {
+                    hudCoords.textContent = `CAM.Z: ${camZ.toFixed(2)} | VEL: ${Math.min(99.9, scrollVelocity).toFixed(1)}`;
+                }
+            }
+        }
+
+        // ==========================================
+        // 5. REVEAL ON SCROLL INTERSECTION OBSERVER
+        // ==========================================
+        const revealElements = document.querySelectorAll('.reveal-up');
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, { threshold: 0.15 });
+
+        revealElements.forEach(el => revealObserver.observe(el));
+
+        // ==========================================
+        // 6. BENTO CARDS SPOTLIGHT + 3D INTERACTIVE TILT
+        // ==========================================
+        document.querySelectorAll('.bento-card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                card.style.setProperty('--mouse-x', `${x}px`);
+                card.style.setProperty('--mouse-y', `${y}px`);
+
+                // Calculate 3D Tilt
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                const rotateX = ((y - centerY) / centerY) * -5;
+                const rotateY = ((x - centerX) / centerX) * 5;
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-4px)`;
+            });
+
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0px)`;
+            });
+        });
+
+        // ==========================================
+        // 7. INTERACTIVE ROI SIMULATOR LOGIC
+        // ==========================================
+        let currentSolutionType = 'ai';
+
+        function selectSolution(type, btnElement) {
+            currentSolutionType = type;
+            playHoverTick("G5");
+            document.querySelectorAll('.sol-btn').forEach(btn => {
+                btn.className = 'sol-btn text-left p-4 rounded-2xl border border-white/10 bg-zinc-900/60 hover:border-white/30 transition-all';
+            });
+            btnElement.className = 'sol-btn active-sol text-left p-4 rounded-2xl border border-cyan-400 bg-cyan-500/10 transition-all';
+            updateSimulator();
+        }
+
+        function updateSimulator() {
+            const teamSize = parseInt(document.getElementById('team-slider').value, 10);
+            document.getElementById('team-size-label').textContent = `${teamSize.toLocaleString('es-ES')} prospectos/mes`;
+
+            let multiplier = 12;
+            let roi = '340%';
+            let weeks = '3 Semanas';
+
+            if (currentSolutionType === 'ai') {
+                multiplier = 14;
+                roi = `${Math.min(580, 290 + Math.floor(teamSize * 0.05))}% ROI`;
+                weeks = '2 Semanas';
+            } else if (currentSolutionType === 'software') {
+                multiplier = 11;
+                roi = `${Math.min(490, 250 + Math.floor(teamSize * 0.04))}% ROI`;
+                weeks = '4 Semanas';
+            } else {
+                multiplier = 16;
+                roi = `${Math.min(620, 310 + Math.floor(teamSize * 0.06))}% ROI`;
+                weeks = '1 Semana';
+            }
+
+            const totalHours = (teamSize * multiplier).toLocaleString('es-ES');
+            document.getElementById('sim-hours').textContent = `${totalHours} h`;
+            document.getElementById('sim-roi').textContent = roi;
+            document.getElementById('sim-weeks').textContent = weeks;
+        }
+
+        // ==========================================
+        // 8. CONTACT MODAL HANDLERS
+        // ==========================================
+        function openContactModal() {
+            playHoverTick("A5");
+            const modal = document.getElementById('contact-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeContactModal() {
+            const modal = document.getElementById('contact-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function submitForm(event) {
+            event.preventDefault();
+            playHoverTick("C6");
+            const successBanner = document.getElementById('form-success');
+            successBanner.classList.remove('hidden');
+            setTimeout(() => {
+                closeContactModal();
+                successBanner.classList.add('hidden');
+                document.getElementById('contact-form').reset();
+            }, 2600);
+        }
+
+        // ==========================================
+        // 9. MAIN ANIMATION LOOP
+        // ==========================================
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Smooth custom cursor ring follow
+            if (cursorRing) {
+                ringX += (cursorX - ringX) * 0.18;
+                ringY += (cursorY - ringY) * 0.18;
+                cursorRing.style.transform = `translate(${ringX}px, ${ringY}px) translate(-50%, -50%)`;
+            }
+
+            if (coreGroup && wireSphere && particleSystem) {
+                coreGroup.rotation.y += ((targetRotationY + mouseX * 0.55) - coreGroup.rotation.y) * 0.06;
+                coreGroup.rotation.x += ((targetRotationX + mouseY * 0.55) - coreGroup.rotation.x) * 0.06;
+
+                wireSphere.rotation.z += 0.003;
+                if (ring1) ring1.rotation.z += 0.008;
+                if (ring2) ring2.rotation.x -= 0.006;
+                if (ring3) ring3.rotation.y += 0.005;
+                particleSystem.rotation.z -= 0.0015;
+
+                renderer.render(scene, camera);
+            }
+        }
+
+        window.onload = function () {
+            initThreeJS();
+            handleScrollScrollytelling();
+            window.addEventListener('scroll', handleScrollScrollytelling, { passive: true });
+            animate();
+        };
+    </script>
+</body>
+</html>
